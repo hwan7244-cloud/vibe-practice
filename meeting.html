@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>팀 회의 안건 정리 도구</title>
+  <style>
+    /* ── 전체 기본 스타일 ── */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background-color: #0d1117;
+      color: #c9d1d9;
+      font-family: 'Segoe UI', sans-serif;
+      padding: 32px 16px;
+      min-height: 100vh;
+    }
+
+    /* ── 가운데 정렬 컨테이너 ── */
+    .컨테이너 {
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    /* ── 상단 헤더 ── */
+    .헤더 {
+      margin-bottom: 32px;
+    }
+
+    .헤더 h1 {
+      font-size: 1.8rem;
+      color: #00e5ff;
+      margin-bottom: 16px;
+    }
+
+    /* ── 입력 그룹 (회의 제목 + 날짜) ── */
+    .회의정보입력 {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .입력칸 {
+      background-color: #161b22;
+      border: 1px solid #21262d;
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: #c9d1d9;
+      font-size: 1rem;
+      flex: 1;
+      min-width: 160px;
+    }
+
+    .입력칸:focus {
+      outline: none;
+      border-color: #00bcd4;
+    }
+
+    /* ── 섹션 타이틀 ── */
+    .섹션제목 {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #00bcd4;
+      margin: 28px 0 12px;
+    }
+
+    /* ── 안건 추가 폼 ── */
+    .안건추가폼 {
+      background-color: #161b22;
+      border: 1px solid #21262d;
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: flex-end;
+    }
+
+    .폼그룹 {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex: 1;
+      min-width: 120px;
+    }
+
+    .폼라벨 {
+      font-size: 0.8rem;
+      color: #8b949e;
+    }
+
+    /* ── 추가 버튼 ── */
+    .추가버튼 {
+      background-color: #00bcd4;
+      color: #0d1117;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 24px;
+      font-size: 0.95rem;
+      font-weight: bold;
+      cursor: pointer;
+      white-space: nowrap;
+      align-self: flex-end;
+      transition: background-color 0.2s;
+    }
+
+    .추가버튼:hover { background-color: #00e5ff; }
+
+    /* ── 안건 카드 목록 ── */
+    .안건목록 {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    /* ── 개별 안건 카드 ── */
+    .안건카드 {
+      background-color: #161b22;
+      border: 1px solid #21262d;
+      border-left: 4px solid #00bcd4;
+      border-radius: 10px;
+      padding: 16px;
+      transition: border-left-color 0.2s;
+    }
+
+    /* ── 상태별 카드 왼쪽 색상 ── */
+    .안건카드.논의중  { border-left-color: #f0a500; }
+    .안건카드.완료    { border-left-color: #2ea043; }
+    .안건카드.보류    { border-left-color: #6e7681; }
+
+    /* ── 카드 상단 행 (제목 + 상태 버튼) ── */
+    .카드상단 {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .안건제목텍스트 {
+      font-size: 1.05rem;
+      font-weight: bold;
+      color: #e6edf3;
+    }
+
+    /* ── 상태 선택 드롭다운 ── */
+    .상태선택 {
+      background-color: #0d1117;
+      border: 1px solid #21262d;
+      border-radius: 6px;
+      padding: 4px 10px;
+      color: #c9d1d9;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+
+    /* ── 카드 하단 행 (담당자 + 소요시간 + 삭제) ── */
+    .카드하단 {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+
+    .메타정보 {
+      font-size: 0.82rem;
+      color: #8b949e;
+    }
+
+    /* ── 메모 입력창 ── */
+    .메모입력 {
+      width: 100%;
+      margin-top: 12px;
+      background-color: #0d1117;
+      border: 1px solid #21262d;
+      border-radius: 6px;
+      padding: 8px 12px;
+      color: #c9d1d9;
+      font-size: 0.9rem;
+      resize: vertical;
+      min-height: 60px;
+    }
+
+    .메모입력:focus { outline: none; border-color: #00bcd4; }
+    .메모입력::placeholder { color: #484f58; }
+
+    /* ── 삭제 버튼 ── */
+    .삭제버튼 {
+      background: none;
+      border: none;
+      color: #6e7681;
+      cursor: pointer;
+      font-size: 0.85rem;
+      margin-left: auto;
+      padding: 2px 6px;
+      border-radius: 4px;
+      transition: color 0.2s;
+    }
+
+    .삭제버튼:hover { color: #f85149; }
+
+    /* ── 안건이 없을 때 안내 문구 ── */
+    .빈목록안내 {
+      text-align: center;
+      color: #484f58;
+      padding: 40px 0;
+      font-size: 0.95rem;
+    }
+
+    /* ── 하단 내보내기 버튼 ── */
+    .내보내기영역 {
+      margin-top: 32px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .내보내기버튼 {
+      background-color: #161b22;
+      border: 1px solid #21262d;
+      border-radius: 8px;
+      padding: 10px 20px;
+      color: #c9d1d9;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+    }
+
+    .내보내기버튼:hover {
+      border-color: #00bcd4;
+      color: #00e5ff;
+    }
+
+    /* ── 드래그 중인 카드 스타일 ── */
+    .드래그중 { opacity: 0.4; }
+    .드래그위치 { border-top: 2px solid #00e5ff; }
+
+    /* ── 모바일 대응 ── */
+    @media (max-width: 480px) {
+      .헤더 h1 { font-size: 1.4rem; }
+      .안건추가폼 { flex-direction: column; }
+      .추가버튼 { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="컨테이너">
+
+    <!-- ── 상단 헤더: 회의 제목 + 날짜 입력 ── -->
+    <div class="헤더">
+      <h1>📋 팀 회의 안건 정리</h1>
+      <div class="회의정보입력">
+        <input class="입력칸" id="회의제목입력" type="text" placeholder="회의 제목 (예: 4월 주간 회의)">
+        <input class="입력칸" id="회의날짜입력" type="date">
+      </div>
+    </div>
+
+    <!-- ── 안건 추가 폼 ── -->
+    <p class="섹션제목">안건 추가</p>
+    <div class="안건추가폼">
+      <div class="폼그룹">
+        <label class="폼라벨">안건 제목 *</label>
+        <input class="입력칸" id="안건제목입력" type="text" placeholder="논의할 내용을 입력하세요">
+      </div>
+      <div class="폼그룹">
+        <label class="폼라벨">담당자</label>
+        <input class="입력칸" id="담당자입력" type="text" placeholder="이름">
+      </div>
+      <div class="폼그룹" style="max-width: 100px;">
+        <label class="폼라벨">소요 시간</label>
+        <input class="입력칸" id="소요시간입력" type="text" placeholder="예: 10분">
+      </div>
+      <button class="추가버튼" onclick="안건추가하기()">+ 추가</button>
+    </div>
+
+    <!-- ── 안건 목록 ── -->
+    <p class="섹션제목">안건 목록</p>
+    <div class="안건목록" id="안건목록">
+      <p class="빈목록안내" id="빈목록안내">아직 등록된 안건이 없습니다.</p>
+    </div>
+
+    <!-- ── 하단 내보내기 버튼 ── -->
+    <div class="내보내기영역">
+      <button class="내보내기버튼" onclick="클립보드에복사하기()">📋 클립보드에 복사</button>
+      <button class="내보내기버튼" onclick="파일로저장하기()">💾 텍스트 파일로 저장</button>
+    </div>
+
+  </div>
+
+  <script>
+    // ── 등록된 안건을 저장하는 배열 ──
+    let 안건목록데이터 = [];
+
+    // ── 드래그 앤 드롭에서 현재 잡고 있는 카드 인덱스 ──
+    let 드래그중인인덱스 = null;
+
+    // ── "추가" 버튼을 클릭하거나 엔터를 눌렀을 때 안건을 등록합니다 ──
+    function 안건추가하기() {
+      const 제목 = document.getElementById("안건제목입력").value.trim();
+      const 담당자 = document.getElementById("담당자입력").value.trim();
+      const 소요시간 = document.getElementById("소요시간입력").value.trim();
+
+      // 제목이 비어있으면 추가하지 않습니다
+      if (!제목) {
+        document.getElementById("안건제목입력").focus();
+        return;
+      }
+
+      // 새 안건 객체를 만들어 목록에 추가합니다
+      const 새안건 = {
+        아이디: Date.now(),        // 고유 번호 (현재 시각 기반)
+        제목: 제목,
+        담당자: 담당자 || "미정",
+        소요시간: 소요시간 || "-",
+        상태: "대기",              // 초기 상태는 "대기"
+        메모: ""
+      };
+
+      안건목록데이터.push(새안건);
+
+      // 입력칸을 비웁니다
+      document.getElementById("안건제목입력").value = "";
+      document.getElementById("담당자입력").value = "";
+      document.getElementById("소요시간입력").value = "";
+      document.getElementById("안건제목입력").focus();
+
+      // 화면을 새로 그립니다
+      화면새로그리기();
+    }
+
+    // ── 엔터 키로도 안건을 추가할 수 있게 합니다 ──
+    document.getElementById("안건제목입력").addEventListener("keydown", function(이벤트) {
+      if (이벤트.key === "Enter") 안건추가하기();
+    });
+
+    // ── 안건의 상태를 변경합니다 (대기 / 논의중 / 완료 / 보류) ──
+    function 상태변경하기(안건아이디, 새상태) {
+      const 해당안건 = 안건목록데이터.find(안건 => 안건.아이디 === 안건아이디);
+      if (해당안건) 해당안건.상태 = 새상태;
+      화면새로그리기();
+    }
+
+    // ── 안건의 메모를 저장합니다 ──
+    function 메모저장하기(안건아이디, 메모내용) {
+      const 해당안건 = 안건목록데이터.find(안건 => 안건.아이디 === 안건아이디);
+      if (해당안건) 해당안건.메모 = 메모내용;
+    }
+
+    // ── 안건을 삭제합니다 ──
+    function 안건삭제하기(안건아이디) {
+      안건목록데이터 = 안건목록데이터.filter(안건 => 안건.아이디 !== 안건아이디);
+      화면새로그리기();
+    }
+
+    // ── 전체 안건 목록을 화면에 다시 그립니다 ──
+    function 화면새로그리기() {
+      const 목록요소 = document.getElementById("안건목록");
+      const 빈안내요소 = document.getElementById("빈목록안내");
+
+      // 안건이 없으면 안내 문구를 표시합니다
+      if (안건목록데이터.length === 0) {
+        목록요소.innerHTML = '<p class="빈목록안내" id="빈목록안내">아직 등록된 안건이 없습니다.</p>';
+        return;
+      }
+
+      // 각 안건마다 카드 HTML을 만들어 목록에 넣습니다
+      목록요소.innerHTML = 안건목록데이터.map((안건, 순서) => `
+        <div class="안건카드 ${안건.상태.replace(' ', '')}"
+          draggable="true"
+          ondragstart="드래그시작(${순서})"
+          ondragover="드래그위치지정(event, ${순서})"
+          ondrop="드래그놓기(${순서})"
+          ondragend="드래그끝()">
+
+          <div class="카드상단">
+            <span class="안건제목텍스트">${순서 + 1}. ${안건.제목}</span>
+            <select class="상태선택" onchange="상태변경하기(${안건.아이디}, this.value)">
+              <option value="대기"   ${안건.상태 === "대기"   ? "selected" : ""}>⬜ 대기</option>
+              <option value="논의중" ${안건.상태 === "논의중" ? "selected" : ""}>🟡 논의중</option>
+              <option value="완료"   ${안건.상태 === "완료"   ? "selected" : ""}>✅ 완료</option>
+              <option value="보류"   ${안건.상태 === "보류"   ? "selected" : ""}>⏸ 보류</option>
+            </select>
+          </div>
+
+          <div class="카드하단">
+            <span class="메타정보">👤 ${안건.담당자}</span>
+            <span class="메타정보">⏱ ${안건.소요시간}</span>
+            <button class="삭제버튼" onclick="안건삭제하기(${안건.아이디})">✕ 삭제</button>
+          </div>
+
+          <textarea class="메모입력"
+            placeholder="결정 사항 또는 액션 아이템을 메모하세요"
+            oninput="메모저장하기(${안건.아이디}, this.value)"
+          >${안건.메모}</textarea>
+        </div>
+      `).join("");
+    }
+
+    // ── 드래그 앤 드롭: 카드를 잡기 시작할 때 ──
+    function 드래그시작(순서) {
+      드래그중인인덱스 = 순서;
+    }
+
+    // ── 드래그 앤 드롭: 다른 카드 위를 지나갈 때 (기본 동작 차단 필요) ──
+    function 드래그위치지정(이벤트, 순서) {
+      이벤트.preventDefault();
+    }
+
+    // ── 드래그 앤 드롭: 카드를 놓았을 때 순서를 바꿉니다 ──
+    function 드래그놓기(놓인순서) {
+      if (드래그중인인덱스 === null || 드래그중인인덱스 === 놓인순서) return;
+
+      // 배열에서 잡은 항목을 꺼내 새 위치에 끼워넣습니다
+      const 이동할안건 = 안건목록데이터.splice(드래그중인인덱스, 1)[0];
+      안건목록데이터.splice(놓인순서, 0, 이동할안건);
+
+      드래그중인인덱스 = null;
+      화면새로그리기();
+    }
+
+    // ── 드래그 앤 드롭: 드래그가 끝났을 때 초기화 ──
+    function 드래그끝() {
+      드래그중인인덱스 = null;
+    }
+
+    // ── 회의록을 텍스트로 만들어 반환합니다 ──
+    function 회의록텍스트만들기() {
+      const 회의제목 = document.getElementById("회의제목입력").value || "제목 없음";
+      const 회의날짜 = document.getElementById("회의날짜입력").value || "날짜 미정";
+
+      let 텍스트 = `📋 회의록\n`;
+      텍스트 += `회의명: ${회의제목}\n`;
+      텍스트 += `날짜: ${회의날짜}\n`;
+      텍스트 += `${"─".repeat(40)}\n\n`;
+
+      if (안건목록데이터.length === 0) {
+        텍스트 += "등록된 안건이 없습니다.";
+        return 텍스트;
+      }
+
+      안건목록데이터.forEach((안건, 순서) => {
+        텍스트 += `${순서 + 1}. ${안건.제목}\n`;
+        텍스트 += `   담당자: ${안건.담당자} | 소요시간: ${안건.소요시간} | 상태: ${안건.상태}\n`;
+        if (안건.메모) {
+          텍스트 += `   메모: ${안건.메모}\n`;
+        }
+        텍스트 += "\n";
+      });
+
+      return 텍스트;
+    }
+
+    // ── 회의록을 클립보드에 복사합니다 ──
+    function 클립보드에복사하기() {
+      const 텍스트 = 회의록텍스트만들기();
+      navigator.clipboard.writeText(텍스트).then(() => {
+        alert("✅ 클립보드에 복사됐습니다!");
+      });
+    }
+
+    // ── 회의록을 텍스트 파일로 저장합니다 ──
+    function 파일로저장하기() {
+      const 텍스트 = 회의록텍스트만들기();
+      const 회의제목 = document.getElementById("회의제목입력").value || "회의록";
+
+      // 브라우저에서 다운로드를 실행하는 방법입니다
+      const 링크요소 = document.createElement("a");
+      링크요소.href = "data:text/plain;charset=utf-8," + encodeURIComponent(텍스트);
+      링크요소.download = `${회의제목}.txt`;
+      링크요소.click();
+    }
+
+    // ── 오늘 날짜를 날짜 입력칸의 기본값으로 설정합니다 ──
+    const 오늘날짜 = new Date().toISOString().split("T")[0];
+    document.getElementById("회의날짜입력").value = 오늘날짜;
+  </script>
+</body>
+</html>
